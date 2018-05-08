@@ -3,6 +3,7 @@ from os.path import isfile, join
 import re
 import os
 
+#From mininet
 def _parseIperf( iperfOutput ):
         """Parse iperf output and return bandwidth.
            iperfOutput: string
@@ -13,7 +14,6 @@ def _parseIperf( iperfOutput ):
             return m[-1]
         else:
             # was: raise Exception(...)
-            print( 'could not parse iperf output: ' + iperfOutput )
             return ''
 
 
@@ -24,6 +24,7 @@ singleThroughput = 0
 eightCount = 0
 eightThroughput = 0
 totalCount = 0
+#Run through directory, parse iperf results, and get final output
 for fn in listdir(os.path.expanduser(resultsPath)):
     fn_path = os.path.expanduser(resultsPath)+fn
     if fn.endswith("one.txt"):
@@ -71,8 +72,8 @@ if singleCount:
 
 if eightCount:
     eightAverage = eightThroughput/eightCount
-print singleAverage
-print eightAverage
-print totalCount
-print singleCount
-print eightCount
+print "Single flow throughput proportion: " + str(singleAverage)
+print "Eight flow throughput proportion: " + str(eightAverage)
+print "Number of pairs: " + str(totalCount)
+print "Number of iperf restuls from single: " + str(singleCount)
+print "Number of iperf results from eigh: " + str(eightCount)
