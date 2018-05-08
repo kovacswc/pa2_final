@@ -22,7 +22,6 @@ totPairs = numSwitches * numPorts
 #to what is now, so ports don't quite align with what is going on
 portsToChooseFrom = range(numSwitches)
 
-print numPortSwitches
 count = 0
 while len(portsToChooseFrom) > 1:
     (port1, port2) = random.sample(portsToChooseFrom,2)
@@ -30,7 +29,6 @@ while len(portsToChooseFrom) > 1:
     if randGraph.has_edge(port1,port2):
         count += 1
         if count > 50:
-            print "Something went wrong!"
             break
         continue
     count = 0
@@ -46,7 +44,6 @@ while len(portsToChooseFrom) > 1:
     adjMatrix[port2][port1] = 1
     randGraph.add_edge(port1,port2)
 
-print randGraph.number_of_edges()
 
 drawFig = False
 
@@ -86,11 +83,6 @@ for i in range(numHosts*numSwitches):
     pairs.append((i,pairSw))
     receivers.remove(pairSw)
 
-print "PAIR LENGTH: "
-        
-print len(pairs)
-
-
 
 for (i,j) in pairs:
 
@@ -115,7 +107,6 @@ for (i,j) in pairs:
             break
         
 
-print short_8_counts[0].max()
 histVals = []
 histVal_e8 = []
 histVal_e64 = []
@@ -146,3 +137,4 @@ plt.xlabel("Link Rank")
 plt.ylabel("# Distinct Paths on Link")
 plt.savefig("paths.png")
 
+print "Finished"
