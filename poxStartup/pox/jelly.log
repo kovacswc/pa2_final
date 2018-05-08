@@ -1,0 +1,6 @@
+INFO:core:POX 0.2.0 (carp) is up.
+INFO:openflow.of_01:[00-00-00-00-00-04 1] connected
+INFO:openflow.of_01:[00-00-00-00-00-03 3] connected
+INFO:openflow.of_01:[00-00-00-00-00-01 2] connected
+INFO:openflow.of_01:[06-4e-74-9c-ce-43 4] connected
+INFO:openflow.of_01:[00-00-00-00-00-02 5] connected
