@@ -34,9 +34,7 @@ from pox.lib.addresses import EthAddr
 
 log = core.getLogger()
 
-#def dpid_to_mac (dpid):
-#  return EthAddr("%012x" % (dpid & 0xffFFffFFffFF,))
-
+#Get MAC based on switch scheme
 def ip_to_mac(ip):
     (nothing, sN, iPt, nada) = str(ip).split(".")
     switch = int(sN)
@@ -51,34 +49,25 @@ def ip_to_mac(ip):
 
 
 netGraph = nx.Graph()
-#adjacency = defaultdict(lambda:defaultdict(lambda:None))
-adjacency = np.zeros((101,101))
+adjacency = np.zeros((201,201))
 class Tutorial (object):
   """
   A Tutorial object is created for each switch that connects.
   A Connection object for that switch is passed to the __init__ function.
   """
   def __init__ (self, connection, sid):
-    # Keep track of the connection to the switch so that we can
-    # send it messages!
-    #def startup ():
     self.connection = connection
     self.sid = sid
-    #self.mac = dpid_to_mac(sid)
     # This binds our PacketIn event listener
     connection.addListeners(self)
 
     # Use this table to keep track of which ethernet address is on
     # which switch port (keys are MACs, values are ports).
     self.mac_to_port = {}
-    #core.call_when_ready(startup, ('openflow','openflow_discovery'))
 
   def _handle_LinkEvent(self, event):
     def flip (link):
       return Discovery.Link(link[2], link[3],link[0],link[1])
-    #l = event.link
-    #sw1 = switches[l.dpid1]
-    #sw2 = switches[l.dpis2]
     
 
   def resend_packet (self, packet_in, out_port):
@@ -132,16 +121,14 @@ class Tutorial (object):
     # switch.  You'll need to rewrite it as real Python code.
 
     # Learn the port for the source MAC
-    #self.mac_to_port ... <add or update entry>
-    #print "Switch: " + str(self.sid)
     self.mac_to_port[packet.src] = packet_in.in_port
     import pox.lib.packet as pkt
 
+    #Ignore unnecessary packets
     if packet.type == packet.LLDP_TYPE:
       drop()
       return
     if packet.type == pkt.ethernet.IPV6_TYPE:
-      #drop()
       return
     
     if packet.type == pkt.ethernet.IP_TYPE:
@@ -152,45 +139,31 @@ class Tutorial (object):
       (nothing, dN, dP, nada) = str(packet.next.dstip).split(".")
 
       srcNode = int(sN)
-#      inPort = int(iPt)
       dstNode = int(dN)
       destPort = int(dP)
 
-      #paths = nx.shortest_path(netGraph,self.sid, int(dstNode))
+      #Get all strictly shortest paths (e.g. same length) and randomly
+      #select one from the top 8. 
       allPaths = nx.all_shortest_paths(netGraph, self.sid, int(dstNode))
       listPaths = []
       for p in allPaths:
-        listPaths.append(p)
-      
+        listPaths.append(p)      
       paths = listPaths[randint(0,min(len(listPaths)-1,7))]
-      print paths
-      print len(listPaths)
+      #Add corresponding flow table entry
       msg = of.ofp_flow_mod()
-      #msg.match = of.ofp_match()
       msg.match = of.ofp_match.from_packet(packet)
-      #msg.match = of.ofp_match.from_packet(packet)
-      #msg.match.in_port = packet_in.in_port
       msg.match.idle_timeout = 10000
-      #msg.match.type = pkt.ethernet.IP_TYPE
-      #msg.data = packet_in
-      print "Received on: " + str(packet_in.in_port)
       if dstNode == self.sid:
-        print "ADDING last port as: " + str(destPort)
         msg.actions.append(of.ofp_action_output(port = destPort))
         self.resend_packet (packet_in, destPort)
 
       else:
-        print "Send out of port: " + str(adjacency[paths[0]][paths[1]])
         nextPort = adjacency[paths[0]][paths[1]]
         msg.actions.append(of.ofp_action_output(port = nextPort))
         self.resend_packet ( packet_in, nextPort)
-      #print "port: >???"
-      #print adjacency
       self.connection.send(msg)
-#      for possPath in paths[0]:
- #       print "Path: "
-    #      print intNode
-    #print packet.effective_ethertype
+
+    #Handle ARP reply  
     elif packet.type == packet.ARP_TYPE:
       if packet.payload.opcode == arp.REQUEST:
         mac_reply = ip_to_mac(packet.payload.protodst)
@@ -212,13 +185,10 @@ class Tutorial (object):
         msg.actions.append(of.ofp_action_output(port = of.OFPP_IN_PORT))
         msg.in_port = packet_in.in_port
         self.connection.send(msg)
-        
-    #return
+
+    #Handle worst case unknown packet via flooding
     elif packet.type != packet.LLDP_TYPE:
-    #if True:
-      #print "GOT HERE SOMEHOW"
-      #print dir(packet)
-      #print "Ethertype: " + str(packet.effective_ethertype) + " is not " + str(packet.LLDP_TYPE)
+   
       if packet.dst in self.mac_to_port:
         #if the port associated with the destination MAC of the packet is known:
         # Send packet out the associated port
@@ -268,35 +238,6 @@ class Tutorial (object):
     #log.info("packet in")
     self.act_like_switch(packet, packet_in)
 
-def CheckController ():
-
-  #  def start_switch (event):
-  #   log.debug("Controlling %s" % (event.connection,))
-  #  Tutorial(event.connection)
-
-  
-  # _neededComponents = set (['openflow_discovery'])
-  # if not core.listen_to_dependencies(_neededComponents):
-  #   listenTo(core)
-  # listenTo(core.openflow)
-
-  
-  def __init__ (self):
-    def startup():
-      core.openflow.addListeners(self, priority=0)
-      #core.openflow.addListenerByName("ConnectionUp", start_switch)
-    core.call_when_ready(startup, ('openflow'))
-      
-  def _handle_ConnectionUp(self, event):
-    log.debug("Controlling %s" % (event.connection,))
-    Tutorial(event.connection)
-
-
-  
-  #core.openflow_disppcovery.addListenerByName("LinkEvent",getTopo)
-  #core.openflow_discovery.addListenerByName("LinkEvent",getTopo)
-  #core.openflow_discovery.addListeners(self)
-  
 
 def launch ():
   """
@@ -307,39 +248,26 @@ def launch ():
   switches = {}
   
   def start_switch (event):
-    #def _handle_ConnectionUp(self,event):
     log.debug("Controlling %s" % (event.connection,))
     switches[event.dpid] = Tutorial(event.connection, event.dpid)
 
   def _handle_BarrierIn(self, event):
     return
-    
-  # def _handle_LinkEvent (self, event):
-  #   l = event.link
-  #   netGraph.add_edge(l.dpid1,l.dpid2)
-  #   print netGraph.nodes()
+
+  #Update network representation when add link
   def getTopo (event):
     l = event.link
-    #print l.dpid1
     sw1 = switches[l.dpid1]
     sw2 = switches[l.dpid2]
 
     netGraph.add_edge(l.dpid1,l.dpid2)
-    #adjacency[sw1][sw2] = l.port1
-    #adjacency[sw2][sw1] = l.port2
     adjacency[l.dpid1][l.dpid2] = l.port1
     adjacency[l.dpid2][l.dpid1] = l.port2
     
     
-    #print netGraph.nodes()
-
-  #core.openflow.addListeners()
   def startup():
     core.openflow.addListenerByName("ConnectionUp", start_switch)
     core.openflow_discovery.addListenerByName("LinkEvent",getTopo)
 
-  #core.call_when_ready(startup, ('openflow'))
-
   core.call_when_ready(startup, ('openflow','openflow_discovery'))
-  #core.openflow_discovery.addListeners(self)
   
