@@ -245,11 +245,10 @@ def launch ():
   """
 
   links = {}
-  switches = {}
   
   def start_switch (event):
     log.debug("Controlling %s" % (event.connection,))
-    switches[event.dpid] = Tutorial(event.connection, event.dpid)
+    Tutorial(event.connection, event.dpid)
 
   def _handle_BarrierIn(self, event):
     return
@@ -257,8 +256,6 @@ def launch ():
   #Update network representation when add link
   def getTopo (event):
     l = event.link
-    sw1 = switches[l.dpid1]
-    sw2 = switches[l.dpid2]
 
     netGraph.add_edge(l.dpid1,l.dpid2)
     adjacency[l.dpid1][l.dpid2] = l.port1
