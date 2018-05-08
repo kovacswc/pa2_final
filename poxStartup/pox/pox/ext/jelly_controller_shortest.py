@@ -271,6 +271,8 @@ def launch ():
   
   def start_switch (event):
     log.debug("Controlling %s" % (event.connection,))
+    Tutorial(event.connection, event.dpid)
+
 
   def _handle_BarrierIn(self, event):
     return
